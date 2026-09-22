@@ -1,0 +1,238 @@
+# Converting a document with doclr
+
+`doclr` converts documents by talking to a
+[docling-serve](https://docling-project.github.io/docling/usage/api_server/rest_api/)
+instance over HTTP. The models run on the server; your R session only
+sends requests and reads results back. Every chunk below is marked
+`eval = FALSE`, because building this vignette should not require a
+running server.
+
+``` r
+
+library(doclr)
+```
+
+## Getting a server
+
+If someone already runs docling-serve for you, all you need is its URL:
+
+``` r
+
+client <- doclr_client("https://docling.example.org", api_key = Sys.getenv("MY_KEY"))
+doclr_health(client)
+```
+
+Both arguments have environment-variable defaults — `DOCLING_SERVE_URL`
+and `DOCLING_SERVE_API_KEY` — so in a configured session
+[`doclr_client()`](https://yves-amevoin.github.io/doclr/reference/doclr_client.md)
+on its own is usually enough. The key is sent as a redacted `X-Api-Key`
+header and never appears in printed requests.
+
+To run a server on your own machine instead, call
+[`doclr_setup()`](https://yves-amevoin.github.io/doclr/reference/doclr_setup.md).
+It is explicit and user-invoked on purpose: it asks before installing
+anything, and it is never triggered by loading the package.
+
+``` r
+
+doclr_setup()
+```
+
+[`doclr_setup()`](https://yves-amevoin.github.io/doclr/reference/doclr_setup.md)
+works through a fallback chain, stopping at the first step that
+succeeds:
+
+1.  A server already answers on the port — nothing to do.
+2.  Podman or Docker is on the `PATH` — pull the image and run it.
+3.  Neither is installed, but Homebrew, winget or apt/dnf/pacman is —
+    offer to install Podman, after asking.
+4.  No container path at all, but Python is present — suggest
+    `pip install "docling-serve[ui]"`.
+5.  None of the above — ask for the URL of a remote server rather than
+    guessing. This is the expected path on a locked-down Windows machine
+    with no WSL2 and no Python.
+
+Afterwards the container is managed directly:
+
+``` r
+
+doclr_server_status()
+doclr_server_stop()
+doclr_server_start()
+```
+
+The first pull is large — today’s `docling-serve` image bundles model
+weights — so expect several hundred megabytes and a slow first run.
+
+## Converting synchronously
+
+The sync endpoints block until the server finishes. They are the right
+choice for one small file:
+
+``` r
+
+doc <- doclr_convert_source("https://arxiv.org/pdf/2408.09869")
+cat(as_markdown(doc))
+```
+
+Local files are uploaded instead:
+
+``` r
+
+doc <- doclr_convert_file("reports/quarterly.pdf")
+```
+
+## Converting asynchronously
+
+Anything long enough to time out a request belongs on the async
+endpoints.
+[`doclr_convert()`](https://yves-amevoin.github.io/doclr/reference/doclr_convert.md)
+wraps the whole cycle — submit, poll with a spinner, collect — and
+routes URLs and local paths to the right endpoint for you:
+
+``` r
+
+doc <- doclr_convert("reports/quarterly.pdf")
+```
+
+Drive the steps yourself when you want to do other work in between:
+
+``` r
+
+task <- doclr_convert_file_async("reports/quarterly.pdf")
+task
+
+doclr_task_status(task)
+
+# ... do something else ...
+
+doc <- doclr_wait(task, poll_interval = 5, timeout = 1800)
+```
+
+[`doclr_task_status()`](https://yves-amevoin.github.io/doclr/reference/doclr_task_status.md)
+returns a one-row tibble, which makes it easy to watch several tasks at
+once:
+
+``` r
+
+tasks <- lapply(list.files("reports", full.names = TRUE), doclr_convert_file_async)
+do.call(rbind, lapply(tasks, doclr_task_status))
+```
+
+A task that fails raises a `doclr_error_task` condition, and one that
+outlives its `timeout` raises `doclr_error_timeout` — the job is still
+on the server, so you can call
+[`doclr_wait()`](https://yves-amevoin.github.io/doclr/reference/doclr_wait.md)
+again with the same id.
+
+## Choosing what the server produces
+
+[`doclr_options()`](https://yves-amevoin.github.io/doclr/reference/doclr_options.md)
+builds the options object. Only the fields you set are sent, so server
+defaults apply to everything else:
+
+``` r
+
+options <- doclr_options(
+  to_formats = c("md", "json"),
+  do_ocr = TRUE,
+  ocr_lang = c("eng", "fra"),
+  do_table_structure = TRUE,
+  table_mode = "accurate"
+)
+
+doc <- doclr_convert("reports/scanned.pdf", options)
+```
+
+Fields this package does not name explicitly pass straight through:
+
+``` r
+
+doclr_options(to_formats = "md", pdf_backend = "dlparse_v4")
+```
+
+## Reading tables and figures out of the result
+
+Markdown is the readable form; JSON is the structured one. Ask for both
+when you want text to read and a tree to query:
+
+``` r
+
+doc <- doclr_convert(
+  "reports/quarterly.pdf",
+  doclr_options(to_formats = c("md", "json"))
+)
+
+cat(as_markdown(doc))
+
+tree <- as_json(doc)
+names(tree)
+```
+
+The docling JSON tree carries `texts`, `tables` and `pictures`
+collections. Tables arrive as grids of cells, which you can flatten into
+a data frame:
+
+``` r
+
+tables <- tree$tables
+
+table_to_df <- function(table) {
+  grid <- table$data$grid
+  rows <- lapply(grid, function(row) vapply(row, function(cell) cell$text, character(1)))
+  body <- do.call(rbind, rows[-1])
+  df <- as.data.frame(body, stringsAsFactors = FALSE)
+  names(df) <- rows[[1]]
+  df
+}
+
+table_to_df(tables[[1]])
+```
+
+Figures live in `tree$pictures`. Ask for embedded images when you want
+the bytes rather than a placeholder:
+
+``` r
+
+doc <- doclr_convert(
+  "reports/quarterly.pdf",
+  doclr_options(to_formats = "json", image_export_mode = "embedded")
+)
+
+pictures <- as_json(doc)$pictures
+length(pictures)
+```
+
+## The other representations
+
+``` r
+
+as_text(doc)     # plain text
+as_html(doc)     # HTML
+as_doctags(doc)  # DocTags markup
+```
+
+Each generic reads a representation the server actually produced. Asking
+for one you did not request raises a `doclr_error_format` condition
+naming what is available — add the format to `to_formats` and convert
+again.
+
+## Handling failures
+
+Every error is an `rlang` condition with a `doclr_error_*` class, so you
+can catch precisely the case you want:
+
+``` r
+
+tryCatch(
+  doclr_convert("reports/quarterly.pdf"),
+  doclr_error_connection = function(e) {
+    message("No server is running. Try doclr_setup().")
+    NULL
+  },
+  doclr_error_http = function(e) {
+    message("The server rejected the request: ", conditionMessage(e))
+    NULL
+  }
+)
+```

@@ -1,0 +1,36 @@
+Package: doclr
+Title: R Client for the 'docling-serve' REST API
+Version: 0.0.0.9000
+Authors@R:
+    person("Yves", "Amevoin", , "amevoin@gmail.com", role = c("aut", "cre"))
+Description: A pure-R, tidyverse-oriented client for the 'docling-serve'
+    document conversion REST API. Submits documents by URL or by file
+    upload, synchronously or asynchronously, polls long-running tasks and
+    returns results as a document object that can be rendered to Markdown,
+    plain text, HTML, JSON or DocTags. Includes optional helpers to
+    provision and manage a local 'docling-serve' container. No Python
+    runtime is required.
+License: MIT + file LICENSE
+URL: https://github.com/GITHUB_USER/doclr
+BugReports: https://github.com/GITHUB_USER/doclr/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Depends:
+    R (>= 4.1)
+Imports:
+    cli,
+    curl,
+    httr2 (>= 1.0.0),
+    jsonlite,
+    rappdirs,
+    rlang (>= 1.1.0),
+    tibble,
+    utils
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    withr
+VignetteBuilder: knitr
+Config/testthat/edition: 3

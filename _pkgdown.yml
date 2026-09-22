@@ -1,0 +1,43 @@
+url: https://GITHUB_USER.github.io/doclr/
+
+template:
+  bootstrap: 5
+
+reference:
+  - title: Connecting
+    desc: Point doclr at a docling-serve instance.
+    contents:
+      - doclr_client
+      - is_doclr_client
+      - doclr_health
+  - title: Converting
+    desc: Submit documents and collect the results.
+    contents:
+      - doclr_convert
+      - doclr_options
+      - doclr_convert_source
+      - doclr_convert_file
+      - doclr_convert_source_async
+      - doclr_convert_file_async
+  - title: Asynchronous tasks
+    contents:
+      - doclr_task
+      - doclr_task_status
+      - doclr_task_result
+      - doclr_wait
+  - title: Working with documents
+    contents:
+      - doclr_document
+      - is_doclr_document
+      - as_markdown
+      - as_text
+      - as_html
+      - as_json
+      - as_doctags
+  - title: Local server
+    desc: Provision and manage a docling-serve container.
+    contents:
+      - doclr_setup
+      - doclr_server_start
+      - doclr_server_stop
+      - doclr_server_status

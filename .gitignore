@@ -1,0 +1,7 @@
+.r-agent/
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+docs/
+inst/doc

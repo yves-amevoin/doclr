@@ -11,8 +11,8 @@ A pure-R, tidyverse-oriented client for the 'docling-serve' document conversion 
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/GITHUB_USER/doclr}
-  \item Report bugs at \url{https://github.com/GITHUB_USER/doclr/issues}
+  \item \url{https://github.com/yves-amevoin/doclr}
+  \item Report bugs at \url{https://github.com/yves-amevoin/doclr/issues}
 }
 
 }

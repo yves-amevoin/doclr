@@ -11,8 +11,8 @@ Description: A pure-R, tidyverse-oriented client for the 'docling-serve'
     provision and manage a local 'docling-serve' container. No Python
     runtime is required.
 License: MIT + file LICENSE
-URL: https://github.com/GITHUB_USER/doclr
-BugReports: https://github.com/GITHUB_USER/doclr/issues
+URL: https://github.com/yves-amevoin/doclr
+BugReports: https://github.com/yves-amevoin/doclr/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0

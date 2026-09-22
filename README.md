@@ -1,7 +1,7 @@
 # doclr
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/GITHUB_USER/doclr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/GITHUB_USER/doclr/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/yves-amevoin/doclr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/yves-amevoin/doclr/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 **doclr** is a pure-R client for the
@@ -28,7 +28,7 @@ models run on the server, not in your session.
 ## Installation
 
 ```r
-pak::pak("GITHUB_USER/doclr")
+pak::pak("yves-amevoin/doclr")
 ```
 
 ## Getting a server

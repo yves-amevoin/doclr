@@ -3,7 +3,7 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   doclr: doclr.html
-last_built: 2026-09-23T05:52Z
+last_built: 2026-09-23T06:05Z
 urls:
   reference: https://yves-amevoin.github.io/doclr/reference
   article: https://yves-amevoin.github.io/doclr/articles

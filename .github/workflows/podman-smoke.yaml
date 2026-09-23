@@ -1,0 +1,58 @@
+# Live smoke test against a real docling-serve, provisioned with Podman.
+#
+# Linux-only, deliberately. Podman's macOS and Windows paths both need a VM
+# (podman machine), which needs nested virtualization; GitHub-hosted macOS
+# runners can't do that at all (Apple Silicon), and Windows support is
+# unofficial/experimental on hosted runners. Linux runs Podman natively, so
+# it's the one platform where this workflow can reliably exercise
+# doclr_setup(engine = "podman") end to end against a real server. See
+# .draft/plans/01-session-1-findings.md for the investigation this is
+# based on.
+#
+# Not run on every push/PR: pulling the docling-serve image and doing a real
+# conversion is slow and depends on an external registry, so this stays
+# opt-in (workflow_dispatch) plus a weekly schedule to catch drift, rather
+# than gating merges.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+
+name: podman-smoke.yaml
+
+permissions: read-all
+
+jobs:
+  podman-smoke:
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure Podman is available
+        run: |
+          if ! command -v podman >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y podman
+          fi
+          podman --version
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgload
+          needs: check
+
+      - name: Run the live smoke test
+        run: Rscript .github/scripts/podman-smoke-test.R
+
+      - name: Show docling-serve logs on failure
+        if: failure()
+        run: podman logs doclr-server || true
